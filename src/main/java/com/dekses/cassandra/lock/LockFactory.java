@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.QueryLogger;
 import com.datastax.driver.core.Cluster.Builder;
 import com.datastax.driver.core.Session;
 
@@ -23,6 +24,9 @@ public class LockFactory {
 	
 	/** Default lock time to live in seconds */
 	private int defaultTTL = 60;
+	
+	/** query logging */
+	private QueryLogger queryLogger;
 	
 	// Prepared CQL statements
 	private PreparedStatement insertPrep;
@@ -71,6 +75,21 @@ public class LockFactory {
 		deletePrep.setConsistencyLevel(ConsistencyLevel.QUORUM);
 		updatePrep = session.prepare("UPDATE lock_leases set owner = ? where name = ? IF owner = ?");
 		updatePrep.setConsistencyLevel(ConsistencyLevel.QUORUM);
+	}
+	
+	/**
+	 * Enable query  logging.
+	 */
+	public void enableQueryLogger() {
+		QueryLogger queryLogger = QueryLogger.builder().build();
+		session.getCluster().register(queryLogger);
+	}
+
+	/**
+	 * Disable query logging. 
+	 */
+	public void disableQueryLogger() {
+		session.getCluster().unregister(queryLogger);
 	}
 	
 	/**
